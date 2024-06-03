@@ -8,7 +8,8 @@ from transformers import CLIPProcessor, CLIPModel
 
 def create_clip():
   processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
-  return processor
+  model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
+  return processor, model
 
 def create_llama3_8b():
   # vocab_size is size of action space 18 + bos + eos
@@ -34,6 +35,14 @@ def create_llama3_8b():
                        attention_dropout = 0.,
                        mlp_bias = False)
   return LlamaForCausalLM(config)
+
+class Gato(nn.Module):
+  def __init__(self, ):
+    self.clip, self.model = create_clip()
+    self.llama3 = create_llama3_8b()
+    super(Gato, self).__init__()
+  def forward(self, inputs):
+    # NOTE: inputs.shape = (batch, seq_len, hidden_size)
 
 if __name__ == "__main__":
   processor = create_clip()
