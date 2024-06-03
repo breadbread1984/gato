@@ -4,6 +4,11 @@ import torch
 from torch import nn
 import torch,nn,functional as F
 from transformers.models.llama import LlamaForCausalLM, LlamaConfig
+from transformers import CLIPProcessor, CLIPModel
+
+def create_clip():
+  processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+  return processor
 
 def create_llama3_8b():
   # vocab_size is size of action space 18 + bos + eos
@@ -31,4 +36,5 @@ def create_llama3_8b():
   return LlamaForCausalLM(config)
 
 if __name__ == "__main__":
+  processor = create_clip()
   llama3 = create_llama3_8b()
