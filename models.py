@@ -3,7 +3,7 @@
 import torch
 from torch import nn
 import torch,nn,functional as F
-from transformers.models.llama import LlavaForCausalLM, LlamaConfig
+from transformers.models.llama import LlamaForCausalLM, LlamaConfig
 
 def create_llama3_8b():
   # vocab_size is size of action space 18 + bos + eos
@@ -28,7 +28,7 @@ def create_llama3_8b():
                        attention_bias = False,
                        attention_dropout = 0.,
                        mlp_bias = False)
-  return LlavaForCausalLM(config)
+  return LlamaForCausalLM(config)
 
 if __name__ == "__main__":
   llama3 = create_llama3_8b()
