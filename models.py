@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from PIL import Image
 import torch
 from torch import nn
 import torch,nn,functional as F
@@ -38,11 +39,12 @@ def create_llama3_8b():
 
 class Gato(nn.Module):
   def __init__(self, ):
-    self.clip, self.model = create_clip()
+    self.processor, self.clip = create_clip()
     self.llama3 = create_llama3_8b()
     super(Gato, self).__init__()
   def forward(self, inputs):
-    # NOTE: inputs.shape = (batch, seq_len, hidden_size)
+    # NOTE: inputs
+    inputs = self.processor(text = [""], images = Image.open())
 
 if __name__ == "__main__":
   processor = create_clip()
