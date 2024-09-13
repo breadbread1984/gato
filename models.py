@@ -60,15 +60,13 @@ class Gato(nn.Module):
     self.patch_size = patch_size
     self.past_key_values = None
     super(Gato, self).__init__()
-  def forward(self, inputs, hist = None):
+  def forward(self, inputs):
     # inputs.shape = (batch, 3, 256, 256)
     # hist.shape = (batch, hist_len, hidden)
     results = (inputs - 128.) / 128. / torch.sqrt(self.patch_size)
     results = self.conv2d(inputs) # results.shape = (batch, hidden, 16, 16)
     results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 256)
     results = torch.permute(results, (0,2,1)) # results.shape = (batch, 256, hidden)
-    if hist:
-      results = torch.cat([hist, results], dim = 1) # results.shape = (batch, hist_len + 256, hidden)
     if results.shape[1] > self.llama3.config.max_position_embeddings:
       results = results[-self.llama3.config.max_position_embeddings:]
       self.past_key_values = [(kv[0][:,:,-self.llama3.config.max_position_embeddings:,:], kv[1][:,:,-self.llama3.config.max_position_embeddings:,:]) for kv in self.past_key_values]
@@ -76,8 +74,9 @@ class Gato(nn.Module):
     outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, past_key_values = self.past_key_values, return_dict = True, use_cache = True)
     self.past_key_values = outputs.past_key_values
     logits = outputs.last_hidden_state[:,-1,:] # logits.shape = (batch, hidden)
-    action = self.pi(logits) # action.shape = (batch, 1)
+    action = self.pi(logits) # action.shape = (batch, 18)
     return action
 
 if __name__ == "__main__":
-  llama3 = create_llama3_8b()
+  gato = Gato()
+  inputs = torch.randn(1,3,256,256)
