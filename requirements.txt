@@ -1,2 +1,2 @@
 torch
-gymnasium[atari, accept-rom-license]
+gymnasium[atari,accept-rom-license]
