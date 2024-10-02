@@ -4,7 +4,7 @@ from PIL import Image
 import torch
 from torch import nn
 import torch.nn.functional as F
-from transformers.models.llama import LlamaModel
+from transformers.models.llama import LlamaModel, LlamaConfig
 
 def create_llama3_8b():
   # vocab_size is size of action space 18 + bos + eos
@@ -54,12 +54,12 @@ class Gato(nn.Module):
     "attention_bias": False,
     "attention_dropout": 0.,
     "mlp_bias": False}):
+    super(Gato, self).__init__()
     self.llama3 = LlamaModel(LlamaConfig(**llama_config))
     self.conv2d = nn.Conv2d(3, self.llama3.config.hidden_size, patch_size, stride = patch_size)
     self.pi = nn.Linear(self.llama3.config.hidden_size, 18)
     self.patch_size = patch_size
     self.past_key_values = None
-    super(Gato, self).__init__()
   def forward(self, inputs):
     # inputs.shape = (batch, 3, 256, 256)
     # hist.shape = (batch, hist_len, hidden)
@@ -78,5 +78,5 @@ class Gato(nn.Module):
     return action
 
 if __name__ == "__main__":
-  gato = Gato()
-  inputs = torch.randn(1,3,256,256)
+  gato = Gato().to('cuda')
+  inputs = torch.randn(1,3,256,256).to('cuda')
