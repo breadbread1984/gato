@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import pandas as pd
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool, cpu_count
 import gymnasium as gym
 import torch
 from torch.utils.data import Dataset
@@ -17,12 +17,11 @@ def get_shape(atari_env):
 def collect_episodes(model, num = 100, out_path = 'episodes.csv'):
   atari_envs = [env_id for env_id in gym.envs.registry.keys() if 'ALE/' in env_id and 'ram' not in env_id]
   print(atari_envs)
-  pool = ThreadPool(processes = 10)
-  results = pool.map_async(get_shape, atari_envs)
-  shapes = results.get()
+  with Pool(processes = cpu_count()) as pool:
+    results = pool.map(get_shape, atari_envs)
   import pickle
   with open('shapes.pkl', 'wb') as f:
-    f.write(pickle.dumps(shapes))
+    f.write(pickle.dumps(results))
 
 class TrajectoryDataset(Dataset):
   def __init__(self):
