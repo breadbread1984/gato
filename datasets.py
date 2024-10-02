@@ -14,12 +14,12 @@ def collect_episodes(model, num = 100, out_path = 'episodes.csv'):
     done = False
     shapes.append(observation.shape)
   import pickle
-  with open('shapes.pkl', 'rb') as f:
+  with open('shapes.pkl', 'wb') as f:
     f.write(pickle.dumps(shapes))
 
 class TrajectoryDataset(Dataset):
   def __init__(self):
-    super(TrajectoryDataset, self):
+    super(TrajectoryDataset, self).__init__()
 
 if __name__ == "__main__":
   collect_episodes('test')
