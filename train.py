@@ -10,7 +10,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.tensorboard import SummaryWriter
 from models import Gato
-from datasets import preprocess, discount_cumsum, gae
+from utils import preprocess, discount_cumsum, gae
 
 FLAGS = flags.FLAGS
 
