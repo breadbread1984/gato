@@ -23,7 +23,7 @@ def discount_cumsum(rewards, gamma = 1.):
 def generate_trajectories(traj_num = 10, policy = None, seed = None):
   gym.register_envs(ale_py)
   # pick a Atari env
-  env_ids = [env_id for env_id in gym.envs.registry.keys() 'ALE/' in env_id and 'ram' not in env_id]
+  env_ids = [env_id for env_id in gym.envs.registry.keys() if 'ALE/' in env_id and 'ram' not in env_id]
   for env_id in tqdm(env_ids):
     env = gym.make(env_id, render_mode = "rgb_array")
     # collect trajectories
