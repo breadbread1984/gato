@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 
 def preprocess(obs):
   obs = cv2.resize(obs, (224,224)) # obs.shape = (224,224,3)
-  obs = np.transpose(obs, (2,0,1))
+  obs = np.transpose(obs, (2,0,1)) # obs.shape = (3, 224, 224)
   return obs
 
 def discount_cumsum(rewards, gamma = 1.):
@@ -19,39 +19,40 @@ def discount_cumsum(rewards, gamma = 1.):
     discount_cumsum[t] = x[t] + gamma * discount_cumsum[t + 1]
   return discount_cumsum
 
-def load_trajectories(trajectories = 10, policy = None, seed = None):
+def generate_trajectories(trajectories = 10, policy = None, seed = None):
   gym.register_envs(ale_py)
   # pick a Atari env
-  atari_envs = [env_id for env_id in gym.envs.registry.keys() if 'ALE/' in env_id and 'ram' not in env_id]
-  choice = np.random.randint(low = 0, high = len(atari_envs), size = ())
-  env = gym.make(atari_envs[choice], render_mode = "rgb_array")
-  # collect trajectories
-  trajectories = list()
-  for _ in range(trajectories):
-    states, rewards, actions, dones, returns = list(), list(), list(), list(), list()
-    obs, info = env.reset(seed = seed)
-    states.append(preprocess(obs)) # s_t
-    while True:
-      if policy is None:
-        action = env.action_space.sample()
-      else:
-        # TODO: use policy
-        pass
-      obs, reward, done, trunc, info = env.step(action)
-      rewards.append(reward) # r_t
-      actions.append(action) # a_t
-      dones.append(done)
-      returns.append(sum(rewards))
-      if done:
-        assert len(states) == len(actions) == len(rewards) == len(dones)
-        trajectories.append({'observations': np.stack(states, axis = 0), # shape = (len, 49, 1024 * 3)
-                             'actions': np.stack(actions, axis = 0), # shape = (len)
-                             'rewards': np.stack(rewards, axis = 0), # shape = (len)
-                             'dones': np.stack(dones, axis = 0), # shape = (len)
-                             'returns': np.stack(returns, axis = 0)}) # shape = (len)
-        trajectories[-1]['rtg'] = discount_cumsum(trajectories[-1]['rewards']) # V(s_t)
-        break
-      states.append(preprocess(obs)) # s_{t+1} 
+  for env_id in gym.envs.registry.keys():
+    if not ('ALE/' in env_id and 'ram' not in env_id): continue
+    env = gym.make(env_id, render_mode = "rgb_array")
+    # collect trajectories
+    trajectories = list()
+    for _ in range(trajectories):
+      states, rewards, actions, dones, returns = list(), list(), list(), list(), list()
+      obs, info = env.reset(seed = seed)
+      states.append(preprocess(obs)) # s_t
+      while True:
+        if policy is None:
+          action = env.action_space.sample()
+        else:
+          # TODO: use policy
+          pass
+        obs, reward, done, trunc, info = env.step(action)
+        rewards.append(reward) # r_t
+        actions.append(action) # a_t
+        dones.append(done)
+        returns.append(sum(rewards))
+        if done:
+          assert len(states) == len(actions) == len(rewards) == len(dones)
+          trajectories.append({'observations': np.stack(states, axis = 0), # shape = (len, 3, 224, 224)
+                               'actions': np.stack(actions, axis = 0), # shape = (len)
+                               'rewards': np.stack(rewards, axis = 0), # shape = (len)
+                               'dones': np.stack(dones, axis = 0), # shape = (len)
+                               'returns': np.stack(returns, axis = 0)}) # shape = (len)
+          trajectories[-1]['rtg'] = discount_cumsum(trajectories[-1]['rewards']) # V(s_t)
+          break
+        states.append(preprocess(obs)) # s_{t+1}
+    env.close()
   return trajectories
 
 class TrajectoryDataset(Dataset):
@@ -59,14 +60,5 @@ class TrajectoryDataset(Dataset):
     super(TrajectoryDataset, self).__init__()
 
 if __name__ == "__main__":
-  import cv2;
-  env = load_env()
-  observation, info = env.reset(seed = 42)
-  for _ in range(100):
-    action = env.action_space.sample()
-    obs, reward, done, trunc, info = env.step(action)
-    #print(obs.shape)
-    image = env.render()[:,:,::-1]
-    cv2.imshow("", image)
-    cv2.waitKey(20)
-
+  trajectories = generate_trajectories(1)
+  import pdb; pdb.set_trace()
