@@ -32,7 +32,7 @@ def create_llama3_8b():
   return LlamaForCausalLM(config)
 
 class Gato(nn.Module):
-  def __init__(self, patch_size = 16, llama_config = {
+  def __init__(self, patch_size = 32, llama_config = {
     "vocab_size": 20,
     "hidden_size": 4096,
     "intermediate_size": 14336,
@@ -56,17 +56,17 @@ class Gato(nn.Module):
     "mlp_bias": False}):
     super(Gato, self).__init__()
     self.llama3 = LlamaModel(LlamaConfig(**llama_config))
-    self.conv2d = nn.Conv2d(3, self.llama3.config.hidden_size, patch_size, stride = patch_size)
+    self.conv2d = nn.Conv2d(3, self.llama3.config.hidden_size, kernel_size = patch_size, stride = patch_size, padding = 0)
     self.pi = nn.Linear(self.llama3.config.hidden_size, 18)
     self.patch_size = patch_size
     self.past_key_values = None
   def forward(self, inputs):
-    # inputs.shape = (batch, 3, 256, 256)
+    # inputs.shape = (batch, 3, 224, 224)
     # hist.shape = (batch, hist_len, hidden)
     results = (inputs - 128.) / 128. / torch.sqrt(self.patch_size)
-    results = self.conv2d(inputs) # results.shape = (batch, hidden, 16, 16)
-    results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 256)
-    results = torch.permute(results, (0,2,1)) # results.shape = (batch, 256, hidden)
+    results = self.conv2d(inputs) # results.shape = (batch, hidden, 7, 7)
+    results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 49)
+    results = torch.permute(results, (0,2,1)) # results.shape = (batch, 49, hidden)
     if results.shape[1] > self.llama3.config.max_position_embeddings:
       results = results[-self.llama3.config.max_position_embeddings:]
       self.past_key_values = [(kv[0][:,:,-self.llama3.config.max_position_embeddings:,:], kv[1][:,:,-self.llama3.config.max_position_embeddings:,:]) for kv in self.past_key_values]
