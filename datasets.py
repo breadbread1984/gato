@@ -9,9 +9,7 @@ from torch.utils.data import Dataset
 
 def preprocess(obs):
   obs = cv2.resize(obs, (224,224)) # obs.shape = (224,224,3)
-  obs = np.reshape(obs, (32,7,32,7,3)) # obs.shape = (32,7,32,7,3)
-  obs = np.transpose(obs, (1,3,0,2,4)) # obs.shape = (7,7,32,32,3)
-  obs = np.reshape(obs, (49, 1024 * 3)) # obs.shape = (49, 1024 * 3)
+  obs = np.transpose(obs, (2,0,1))
   return obs
 
 def discount_cumsum(rewards, gamma = 1.):
@@ -43,7 +41,7 @@ def load_trajectories(trajectories = 10, policy = None, seed = None):
       rewards.append(reward) # r_t
       actions.append(action) # a_t
       dones.append(done)
-      returns.append(sum(rewards)) # V(s)
+      returns.append(sum(rewards))
       if done:
         assert len(states) == len(actions) == len(rewards) == len(dones)
         trajectories.append({'observations': np.stack(states, axis = 0), # shape = (len, 49, 1024 * 3)
@@ -51,10 +49,9 @@ def load_trajectories(trajectories = 10, policy = None, seed = None):
                              'rewards': np.stack(rewards, axis = 0), # shape = (len)
                              'dones': np.stack(dones, axis = 0), # shape = (len)
                              'returns': np.stack(returns, axis = 0)}) # shape = (len)
-        trajectories[-1]['rtg'] = discount_cumsum(trajectories[-1]['rewards'])
+        trajectories[-1]['rtg'] = discount_cumsum(trajectories[-1]['rewards']) # V(s_t)
         break
-      states.append(preprocess(obs)) # s_{t+1}
-  
+      states.append(preprocess(obs)) # s_{t+1} 
   return trajectories
 
 class TrajectoryDataset(Dataset):
