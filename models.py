@@ -58,6 +58,7 @@ class Gato(nn.Module):
     self.llama3 = LlamaModel(LlamaConfig(**llama_config))
     self.conv2d = nn.Conv2d(3, self.llama3.config.hidden_size, kernel_size = patch_size, stride = patch_size, padding = 0)
     self.pi = nn.Linear(self.llama3.config.hidden_size, 18)
+    self.v_value = nn.Linear(self.llama3.config.hidden_size, 1)
     self.patch_size = patch_size
     self.past_key_values = None
   def forward(self, inputs):
@@ -75,7 +76,8 @@ class Gato(nn.Module):
     self.past_key_values = outputs.past_key_values
     logits = outputs.last_hidden_state[:,-1,:] # logits.shape = (batch, hidden)
     action = self.pi(logits) # action.shape = (batch, 18)
-    return action
+    v_value = self.v_value(logits) # v.shape = (batch, 1)
+    return action, v_value
 
 if __name__ == "__main__":
   gato = Gato().to('cuda')
