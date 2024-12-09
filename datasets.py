@@ -20,7 +20,7 @@ def discount_cumsum(rewards, gamma = 1.):
     discount_cumsum[t] = rewards[t] + gamma * discount_cumsum[t + 1]
   return discount_cumsum
 
-def generate_trajectories(traj_num = 10, policy = None, seed = None):
+def generate_trajectories(traj_num, policy, gamma = 1., lambda = .95, seed = None):
   gym.register_envs(ale_py)
   # pick a Atari env
   env_ids = [env_id for env_id in gym.envs.registry.keys() if 'ALE/' in env_id and 'ram' not in env_id]
@@ -29,32 +29,35 @@ def generate_trajectories(traj_num = 10, policy = None, seed = None):
     # collect trajectories
     trajectories = list()
     for _ in range(traj_num):
-      states, rewards, actions, dones, returns = list(), list(), list(), list(), list()
-      trajectory = list()
+      states, rewards, actions, dones, returns, rtg_preds = list(), list(), list(), list(), list(), list()
       obs, info = env.reset(seed = seed)
-      states.append(preprocess(obs)) # s_t
+      state = preprocess(obs)
+      states.append(state) # s_t
       while True:
-        if policy is None:
-          action = env.action_space.sample()
-        else:
-          # TODO: use policy
-          pass
-        obs, reward, done, trunc, info = env.step(action)
+        # predict action from policy
+        with torch.no_grad():
+          action, v_value = policy(torch.unsqueeze(torch.from_numpy(state), dim = 0).to(next(policy.parameters()).device))
+        action = np.argmax(action.detach().cpu().numpy()[0])
+        v_pred = v_value.detach().cpu().numpy()[0]
+
+        obs, reward, done, info = env.step(action)
         rewards.append(reward) # r_t
         actions.append(action) # a_t
         dones.append(done)
         returns.append(sum(rewards))
+        rtg_preds.append(v_pred)
         if done:
           assert len(states) == len(actions) == len(rewards) == len(dones)
-          trajectory.append({'observations': np.stack(states, axis = 0), # shape = (len, 3, 224, 224)
-                             'actions': np.stack(actions, axis = 0), # shape = (len)
-                             'rewards': np.stack(rewards, axis = 0), # shape = (len)
-                             'dones': np.stack(dones, axis = 0), # shape = (len)
-                             'returns': np.stack(returns, axis = 0)}) # shape = (len)
-          trajectory[-1]['rtg'] = discount_cumsum(trajectory[-1]['rewards']) # V(s_t)
+          trajectories.append({'observations': np.stack(states, axis = 0), # shape = (len, 3, 224, 224)
+                               'actions': np.stack(actions, axis = 0), # shape = (len)
+                               'rewards': np.stack(rewards, axis = 0), # shape = (len)
+                               'dones': np.stack(dones, axis = 0), # shape = (len)
+                               'returns': np.stack(returns, axis = 0)}) # shape = (len)
+          trajectories[-1]['rtg'] = discount_cumsum(trajectories[-1]['rewards'], gamma = gamma) # V(s_t).shape = (len)
+          rtg_diff = trajectories[-1]['rtg'] - np.stack(rtg_preds, axis = 0)
+          # TODO
           break
         states.append(preprocess(obs)) # s_{t+1}
-      trajectories.append(trajectory)
     env.close()
   return trajectories
 
