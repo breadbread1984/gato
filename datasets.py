@@ -19,7 +19,7 @@ def discount_cumsum(rewards, gamma = 1.):
     discount_cumsum[t] = x[t] + gamma * discount_cumsum[t + 1]
   return discount_cumsum
 
-def generate_trajectories(trajectories = 10, policy = None, seed = None):
+def generate_trajectories(traj_num = 10, policy = None, seed = None):
   gym.register_envs(ale_py)
   # pick a Atari env
   for env_id in gym.envs.registry.keys():
@@ -27,7 +27,7 @@ def generate_trajectories(trajectories = 10, policy = None, seed = None):
     env = gym.make(env_id, render_mode = "rgb_array")
     # collect trajectories
     trajectories = list()
-    for _ in range(trajectories):
+    for _ in range(traj_num):
       states, rewards, actions, dones, returns = list(), list(), list(), list(), list()
       obs, info = env.reset(seed = seed)
       states.append(preprocess(obs)) # s_t
