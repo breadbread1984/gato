@@ -55,7 +55,7 @@ def main(unused_argv):
         actions.append(action[0]) # a_t.shape = (18,)
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
         if done:
-          assert len(states) == len(actions) == len(rewards) == len(dones)
+          assert len(states) == len(actions) == len(rewards) == len(v_preds)
           observations = np.stack(states, axis = 0) # shape = (len, 3, 224, 224)
           actions = np.stack(actions, axis = 0) # shape = (len)
           rewards = np.stack(rewards, axis = 0) # shape = (len)
