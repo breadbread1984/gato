@@ -30,6 +30,7 @@ def generate_trajectories(traj_num = 10, policy = None, seed = None):
     trajectories = list()
     for _ in range(traj_num):
       states, rewards, actions, dones, returns = list(), list(), list(), list(), list()
+      trajectory = list()
       obs, info = env.reset(seed = seed)
       states.append(preprocess(obs)) # s_t
       while True:
@@ -45,14 +46,15 @@ def generate_trajectories(traj_num = 10, policy = None, seed = None):
         returns.append(sum(rewards))
         if done:
           assert len(states) == len(actions) == len(rewards) == len(dones)
-          trajectories.append({'observations': np.stack(states, axis = 0), # shape = (len, 3, 224, 224)
-                               'actions': np.stack(actions, axis = 0), # shape = (len)
-                               'rewards': np.stack(rewards, axis = 0), # shape = (len)
-                               'dones': np.stack(dones, axis = 0), # shape = (len)
-                               'returns': np.stack(returns, axis = 0)}) # shape = (len)
-          trajectories[-1]['rtg'] = discount_cumsum(trajectories[-1]['rewards']) # V(s_t)
+          trajectory.append({'observations': np.stack(states, axis = 0), # shape = (len, 3, 224, 224)
+                             'actions': np.stack(actions, axis = 0), # shape = (len)
+                             'rewards': np.stack(rewards, axis = 0), # shape = (len)
+                             'dones': np.stack(dones, axis = 0), # shape = (len)
+                             'returns': np.stack(returns, axis = 0)}) # shape = (len)
+          trajectory[-1]['rtg'] = discount_cumsum(trajectory[-1]['rewards']) # V(s_t)
           break
         states.append(preprocess(obs)) # s_{t+1}
+      trajectories.append(trajectory)
     env.close()
   return trajectories
 
