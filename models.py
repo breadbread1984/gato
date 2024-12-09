@@ -60,7 +60,6 @@ class Gato(nn.Module):
     self.pi = nn.Linear(self.llama3.config.hidden_size, 18)
     self.v_value = nn.Linear(self.llama3.config.hidden_size, 1)
     self.patch_size = patch_size
-    self.past_key_values = None
   def forward(self, inputs):
     # inputs.shape = (batch, 3, 224, 224)
     # hist.shape = (batch, hist_len, hidden)
@@ -68,14 +67,10 @@ class Gato(nn.Module):
     results = self.conv2d(inputs) # results.shape = (batch, hidden, 7, 7)
     results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 49)
     results = torch.permute(results, (0,2,1)) # results.shape = (batch, 49, hidden)
-    if results.shape[1] > self.llama3.config.max_position_embeddings:
-      results = results[-self.llama3.config.max_position_embeddings:]
-      self.past_key_values = [(kv[0][:,:,-self.llama3.config.max_position_embeddings:,:], kv[1][:,:,-self.llama3.config.max_position_embeddings:,:]) for kv in self.past_key_values]
     attention_mask = torch.ones((results.shape[0], results.shape[1]), torch.int64) # attention_mask.shape = (batch, hist_len + 256)
-    outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, past_key_values = self.past_key_values, return_dict = True, use_cache = True)
-    self.past_key_values = outputs.past_key_values
+    outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, use_cache = True)
     logits = outputs.last_hidden_state[:,-1,:] # logits.shape = (batch, hidden)
-    action = self.pi(logits) # action.shape = (batch, 18)
+    action = torch.softmax(self.pi(logits), dim = -1) # action.shape = (batch, 18)
     v_value = self.v_value(logits) # v.shape = (batch, 1)
     return action, v_value
 
