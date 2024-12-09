@@ -3,6 +3,7 @@
 import gymasium as gym
 import ale_py
 from absl import flags, app
+from os.path import join, exists
 from tqdm import tqdm
 import torch
 from torch import device
@@ -30,6 +31,13 @@ def main(unused_argv):
   tb_writer = SummaryWriter(log_dir = join(FLAGS.ckpt, 'summaries'))
   gym.register_envs(ale_py)
   env_ids = [env_id for env_id in gym.envs.registry.keys() if 'ALE/' in env_id and 'ram' not in env_id]
+  global_steps = 0
+  if exists(join(FLAGS.ckpt, 'model.pth')):
+    ckpt = torch.load(join(FLAGS.ckpt, 'model.pth'))
+    global_steps = ckpt['global_steps']
+    policy.load_state_dict(ckpt['state_dict'])
+    optimizer.load_state_dict(ckpt['optimizer'])
+    scheduler = ckpt['scheduler']
   for i in tqdm(range(FLAGS.epochs)):
     for env_id in env_ids:
       optimizer.zero_grad()
@@ -62,6 +70,16 @@ def main(unused_argv):
       loss.backward()
       optimizer.step()
       env.close()
+      tb_writer.add_scalar('loss', loss, global_steps)
+      global_steps += 1
+    scheduler.step()
+    ckpt = {
+      'global_steps': global_steps,
+      'state_dict': policy.state_dict(),
+      'optimizer': optimizer.state_dict(),
+      'scheduler': scheduler
+    }
+    torch.save(ckpt, join(FLAGS.ckpt, 'model.pth'))
 
 if __name__ == "__main__":
   add_options()
