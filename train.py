@@ -59,6 +59,11 @@ def main(unused_argv):
         logprobs.append(torch.log(probs[0][act])) # logprob.shape = ()
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
         dones.append(done)
+        if len(rewards) > 100:
+          rewards = rewards[-100:]
+          logprobs = logprobs[-100:]
+          v_preds = v_preds[-100:]
+          dones = dones[-100:]
         if done:
           assert len(logprobs) == len(rewards) == len(v_preds)
           logprobs = torch.stack(logprobs, axis = 0) # shape = (len)
