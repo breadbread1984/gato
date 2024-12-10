@@ -15,7 +15,7 @@ def preprocess(obs):
   return obs
 
 def discount_cumsum(rewards, gamma = 1.):
-  discount_cumsum = np.zeros_like(rewards) # discount_cumsum.shape = (len)
+  discount_cumsum = torch.zeros_like(rewards) # discount_cumsum.shape = (len)
   discount_cumsum[-1] = rewards[-1]
   for t in reversed(range(rewards.shape[0] - 1)):
     discount_cumsum[t] = rewards[t] + gamma * discount_cumsum[t + 1]
@@ -23,7 +23,7 @@ def discount_cumsum(rewards, gamma = 1.):
 
 def gae(rewards, values, dones, gamma, lam):
   T = len(rewards)
-  advantages = np.zeros(T)
+  advantages = torch.zeros(T).to(rewards.device)
   gae_ = 0
   for t in reversed(range(T)):
     delta = rewards[t] + (gamma * values[t + 1] if not dones[t] else 0) - values[t]
