@@ -52,8 +52,7 @@ def main(unused_argv):
       while True:
         probs, v_pred, past_key_values = policy(state, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
         # run in environment
-        dist = torch.distributions.Categorical(probs[0])
-        act = dist.sample() # act.shape = ()
+        act = torch.multinomial(probs[0], 1) # act.shape = ()
         print(past_key_values.get_seq_length(), act.detach().cpu().numpy())
         obs, reward, done, trunc, info = env.step(act.detach().cpu().numpy())
         rewards.append(torch.tensor(reward).to(next(policy.parameters()).device)) # r_t.shape = ()
