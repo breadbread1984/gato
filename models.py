@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
+import torchvision
 from transformers import Cache, DynamicCache
 from transformers.models.llama import LlamaModel, LlamaConfig
 
@@ -18,6 +19,30 @@ def create_llama3_8b():
                        num_key_value_heads = 8,
                        hidden_act = "silu",
                        max_position_embeddings = 4096,
+                       initializer_range = 0.02,
+                       rms_norm_eps = 1e-05,
+                       use_cache = True,
+                       pad_token_id = None,
+                       bos_token_id = 18,
+                       eos_token_id = 19,
+                       pretraining_tp = 1,
+                       tie_word_embeddings = False,
+                       rope_theta = 500000.,
+                       rope_scaling = None,
+                       attention_bias = False,
+                       attention_dropout = 0.,
+                       mlp_bias = False)
+  return LlamaForCausalLM(config)
+
+def create_llama3_1_5b():
+  config = LlamaConfig(vocab_size = 20,
+                       hidden_size = 1536,
+                       intermediate_size = 8960,
+                       num_hidden_layers = 28,
+                       num_attention_heads = 12,
+                       num_key_value_heads = 2,
+                       hidden_act = "silu",
+                       max_position_embeddings = 32768,
                        initializer_range = 0.02,
                        rms_norm_eps = 1e-05,
                        use_cache = True,
@@ -58,7 +83,8 @@ class Gato(nn.Module):
     "mlp_bias": False}):
     super(Gato, self).__init__()
     self.llama3 = LlamaModel(LlamaConfig(**llama_config))
-    self.conv2d = nn.Conv2d(3, self.llama3.config.hidden_size, kernel_size = patch_size, stride = patch_size, padding = 0)
+    self.encoder = torchvision.models.resnet18(pretrained = True)
+    self.encoder.fc = nn.Linear(512, self.llama3.config.hidden_size)
     self.pi = nn.Linear(self.llama3.config.hidden_size, 18)
     self.v_value = nn.Linear(self.llama3.config.hidden_size, 1)
     self.patch_size = patch_size
@@ -67,11 +93,10 @@ class Gato(nn.Module):
     # inputs.shape = (1, 3, 224, 224)
     # past_key_values.shape = (layer_num, 2, batch, head, seq_len, hidden / head)
     results = (inputs - 128.) / 128. / np.sqrt(self.patch_size)
-    results = self.conv2d(results) # results.shape = (1, hidden, 7, 7)
-    results = torch.flatten(results, start_dim = 2) # results.shape = (1, hidden, 49)
-    results = torch.permute(results, (0,2,1)) # results.shape = (1, 49, hidden)
+    results = self.encoder(results) # results.shape = (batch, hidden)
+    results = torch.unsqueeze(results, dim = 1) # results.shape = (batch, 1, hidden)
     seq_length = past_key_values.get_seq_length()
-    attention_mask = torch.ones((results.shape[0], seq_length + results.shape[1]), dtype = torch.int64).to(next(self.parameters()).device) # attention_mask.shape = (batch, 49)
+    attention_mask = torch.ones((results.shape[0], seq_length + results.shape[1]), dtype = torch.int64).to(next(self.parameters()).device) # attention_mask.shape = (batch, seq_len + 1)
     outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, past_key_values = past_key_values, use_cache = True)
     logits = outputs.last_hidden_state[:,-1,:] # logits.shape = (batch, hidden)
     action = torch.softmax(self.pi(logits), dim = -1) # action.shape = (batch, 18)
