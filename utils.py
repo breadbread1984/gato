@@ -11,6 +11,7 @@ from torch.utils.data import Dataset
 def preprocess(obs):
   obs = cv2.resize(obs, (224,224)) # obs.shape = (224,224,3)
   obs = np.transpose(obs, (2,0,1)) # obs.shape = (3, 224, 224)
+  obs = np.expand_dims(obs, axis = 0) # obs.shape = (1,3,224,224)
   return obs
 
 def discount_cumsum(rewards, gamma = 1.):

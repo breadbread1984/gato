@@ -45,13 +45,12 @@ def main(unused_argv):
     for env_id in env_ids:
       optimizer.zero_grad()
       env = gym.make(env_id, render_mode = "rgb_array")
-      states, rewards, actions, v_preds, dones = list(), list(), list(), list(), list()
+      rewards, actions, v_preds, dones = list(), list(), list(), list()
       past_key_values = DynamicCache()
       obs, info = env.reset(seed = FLAGS.seed)
-      states.append(preprocess(obs)) # s_t
+      state = torch.from_numpy(preprocess(obs)).to(next(policy.parameters()).device) # s_t.shape = (1, 224, 224, 3)
       while True:
-        inputs = torch.from_numpy(np.stack(states, axis = 0)).to(next(policy.parameters()).device) # inputs.shape = (len, 224, 224, 3)
-        action, v_pred, past_key_values = policy(inputs, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
+        action, v_pred, past_key_values = policy(state, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
         # run in environment
         act = torch.argmax(action[0], dim = 0) # act.shape = ()
         obs, reward, done, trunc, info = env.step(act.detach().cpu().numpy())
@@ -68,7 +67,7 @@ def main(unused_argv):
           v_preds = torch.cat(v_preds, dim = 0) # v_preds.shape = (len)
           advantages = gae(rewards, v_preds, dones, FLAGS.gamma, FLAGS.lam)
           break
-        states.append(preprocess(obs)) # s_{t+1}
+        state = torch.from_numpy(preprocess(obs)).to(next(policy.parameters()).device) # s_{t+1}.shape = (1, 224, 224, 3)
       probs = torch.stack(actions, dim = 0) # actions.shape = (len, 18)
       logprobs = torch.max(torch.log(probs), dim = -1) # log_prob.shape = (len)
       loss = - torch.mean(logprobs * advantages) + 0.5 * criterion(v_preds, v_trues)
