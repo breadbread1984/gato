@@ -60,7 +60,7 @@ def main(unused_argv):
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
         dones.append(done)
         if done:
-          assert len(actions) == len(rewards) == len(v_preds)
+          assert len(logprobs) == len(rewards) == len(v_preds)
           logprobs = torch.stack(logprobs, axis = 0) # shape = (len)
           rewards = torch.stack(rewards, axis = 0) # shape = (len)
           v_trues = discount_cumsum(rewards, gamma = FLAGS.gamma) # V(s_t).shape = (len)
