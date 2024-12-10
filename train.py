@@ -53,7 +53,7 @@ def main(unused_argv):
         action, v_pred, past_key_values = policy(inputs, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
         # run in environment
         act = torch.argmax(action[0], dim = 0) # act.shape = ()
-        obs, reward, done, info = env.step(act.detach().cpu().numpy())
+        obs, reward, done, trunc, info = env.step(act.detach().cpu().numpy())
         rewards.append(torch.Tensor(reward).to(next(policy.parameters()).device)) # r_t.shape = ()
         actions.append(action[0]) # a_t.shape = (18,)
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
