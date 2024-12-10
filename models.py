@@ -64,12 +64,12 @@ class Gato(nn.Module):
     self.patch_size = patch_size
   def forward(self, inputs, past_key_values = DynamicCache()):
     assert isinstance(past_key_values, Cache)
-    # inputs.shape = (batch, 3, 224, 224)
+    # inputs.shape = (1, 3, 224, 224)
     # past_key_values.shape = (layer_num, 2, batch, head, seq_len, hidden / head)
     results = (inputs - 128.) / 128. / np.sqrt(self.patch_size)
-    results = self.conv2d(results) # results.shape = (batch, hidden, 7, 7)
-    results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 49)
-    results = torch.permute(results, (0,2,1)) # results.shape = (batch, 49, hidden)
+    results = self.conv2d(results) # results.shape = (1, hidden, 7, 7)
+    results = torch.flatten(results, start_dim = 2) # results.shape = (1, hidden, 49)
+    results = torch.permute(results, (0,2,1)) # results.shape = (1, 49, hidden)
     seq_length = past_key_values.get_seq_length()
     attention_mask = torch.ones((results.shape[0], seq_length + results.shape[1]), dtype = torch.int64).to(next(self.parameters()).device) # attention_mask.shape = (batch, 49)
     outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, past_key_values = past_key_values, use_cache = True)
