@@ -5,6 +5,7 @@ import ale_py
 from absl import flags, app
 from os.path import join, exists
 from tqdm import tqdm
+import numpy as np
 import torch
 from torch import nn, device
 from torch.optim import Adam
