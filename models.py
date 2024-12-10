@@ -65,7 +65,7 @@ class Gato(nn.Module):
     # inputs.shape = (batch, 3, 224, 224)
     # past_key_values.shape = (layer_num, 2, batch, head, seq_len, hidden / head)
     results = (inputs - 128.) / 128. / np.sqrt(self.patch_size)
-    results = self.conv2d(inputs) # results.shape = (batch, hidden, 7, 7)
+    results = self.conv2d(results) # results.shape = (batch, hidden, 7, 7)
     results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 49)
     results = torch.permute(results, (0,2,1)) # results.shape = (batch, 49, hidden)
     seq_length = past_key_values[0][0].shape[2]
