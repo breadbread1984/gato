@@ -65,7 +65,7 @@ def main(unused_argv):
           logprobs = logprobs[-100:]
           v_preds = v_preds[-100:]
           dones = dones[-100:]
-          past_key_values.trucate_to_last_n(100)
+          past_key_values.truncate_to_last_n(100)
         if done:
           assert len(logprobs) == len(rewards) == len(v_preds)
           logprobs = torch.stack(logprobs, axis = 0) # shape = (len)
