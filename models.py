@@ -89,9 +89,9 @@ class Gato(nn.Module):
     self.v_value = nn.Linear(self.llama3.config.hidden_size, 1)
   def forward(self, inputs, past_key_values = DynamicCache()):
     assert isinstance(past_key_values, Cache)
-    # inputs.shape = (1, 3, 224, 224)
+    # inputs.shape = (batch, 3, 224, 224)
     # past_key_values.shape = (layer_num, 2, batch, head, seq_len, hidden / head)
-    results = (inputs - 128.) / 128.
+    results = (inputs - 128.) / 128. # results.shape = (batch, 3, 224, 224)
     results = self.encoder(results) # results.shape = (batch, hidden)
     results = torch.unsqueeze(results, dim = 1) # results.shape = (batch, 1, hidden)
     seq_length = past_key_values.get_seq_length()
