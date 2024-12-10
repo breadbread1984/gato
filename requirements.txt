@@ -1,2 +1,3 @@
 torch
-gymnasium[atari,accept-rom-license]
+gymnasium
+ale_py
