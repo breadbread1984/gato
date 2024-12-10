@@ -22,7 +22,7 @@ def add_options():
   flags.DEFINE_float('lr', default = 1e-4, help = 'learning rate')
   flags.DEFINE_string('ckpt', default = 'ckpt', help = 'checkpoint')
   flags.DEFINE_float('gamma', default = 0.95, help = 'gamma')
-  flags.DEFINE_float('lambda', default = 0.95, help = 'lambda')
+  flags.DEFINE_float('lam', default = 0.95, help = 'lambda')
 
 def main(unused_argv):
   policy = Gato().to(device(FLAGS.device))
@@ -64,7 +64,7 @@ def main(unused_argv):
           rewards = torch.stack(rewards, axis = 0) # shape = (len)
           v_trues = discount_cumsum(rewards, gamma = FLAGS.gamma) # V(s_t).shape = (len)
           v_preds = torch.cat(v_preds, dim = 0) # v_preds.shape = (len)
-          advantages = gae(rewards, v_preds, dones, FLAGS.gamma, FLAGS.lambda)
+          advantages = gae(rewards, v_preds, dones, FLAGS.gamma, FLAGS.lam)
           break
         states.append(preprocess(obs)) # s_{t+1}
       probs = torch.stack(actions, dim = 0) # actions.shape = (len, 18)
