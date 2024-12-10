@@ -50,12 +50,13 @@ def main(unused_argv):
       obs, info = env.reset(seed = FLAGS.seed)
       state = torch.from_numpy(preprocess(obs)).to(next(policy.parameters()).device) # s_t.shape = (1, 224, 224, 3)
       while True:
-        action, v_pred, past_key_values = policy(state, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
+        probs, v_pred, past_key_values = policy(state, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
         # run in environment
-        act = torch.argmax(action[0], dim = 0) # act.shape = ()
+        dist = torch.distributions.Categorical(probs[0])
+        act = dist.sample() # act.shape = ()
         obs, reward, done, trunc, info = env.step(act.detach().cpu().numpy())
         rewards.append(torch.tensor(reward).to(next(policy.parameters()).device)) # r_t.shape = ()
-        actions.append(action[0]) # a_t.shape = (18,)
+        actions.append(probs[0]) # a_t.shape = (18,)
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
         dones.append(done)
         if done:
@@ -68,7 +69,7 @@ def main(unused_argv):
           break
         state = torch.from_numpy(preprocess(obs)).to(next(policy.parameters()).device) # s_{t+1}.shape = (1, 224, 224, 3)
       probs = torch.stack(actions, dim = 0) # actions.shape = (len, 18)
-      logprobs = torch.max(torch.log(probs), dim = -1) # log_prob.shape = (len)
+      logprobs = torch.squeeze(torch.gather(probs, dim = 1, index = torch.unsqueeze(actions, dim = 0)), dim = 0) # logprobs.shape = (len)
       loss = - torch.mean(logprobs * advantages) + 0.5 * criterion(v_preds, v_trues)
       loss.backward()
       optimizer.step()
