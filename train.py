@@ -11,6 +11,7 @@ from torch import nn, device
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.tensorboard import SummaryWriter
+from transformers import DynamicCache
 from models import Gato
 from utils import preprocess, discount_cumsum, gae
 
@@ -45,7 +46,7 @@ def main(unused_argv):
       optimizer.zero_grad()
       env = gym.make(env_id, render_mode = "rgb_array")
       states, rewards, actions, v_preds, dones = list(), list(), list(), list(), list()
-      past_key_values = None
+      past_key_values = DynamicCache()
       obs, info = env.reset(seed = FLAGS.seed)
       states.append(preprocess(obs)) # s_t
       while True:
