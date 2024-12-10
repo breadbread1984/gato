@@ -34,17 +34,17 @@ def create_llama3_8b():
             "mlp_bias": False}
   return Gato(config)
 
-def create_llama3_1_5b():
+def create_llama3_0_5b():
   config = {"vocab_size": 20,
-            "hidden_size": 1536,
-            "intermediate_size": 8960,
-            "num_hidden_layers": 28,
-            "num_attention_heads": 12,
+            "hidden_size": 896,
+            "intermediate_size": 4864,
+            "num_hidden_layers": 24,
+            "num_attention_heads": 14,
             "num_key_value_heads": 2,
             "hidden_act": "silu",
             "max_position_embeddings": 32768,
             "initializer_range": 0.02,
-            "rms_norm_eps": 1e-05,
+            "rms_norm_eps": 1e-06,
             "use_cache": True,
             "pad_token_id": None,
             "bos_token_id": 18,

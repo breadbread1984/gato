@@ -12,7 +12,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.tensorboard import SummaryWriter
 from transformers import DynamicCache
-from models import create_llama3_1_5b
+from models import create_llama3_0_5b
 from utils import preprocess, discount_cumsum, gae
 
 FLAGS = flags.FLAGS
@@ -27,7 +27,7 @@ def add_options():
   flags.DEFINE_float('lam', default = 0.95, help = 'lambda')
 
 def main(unused_argv):
-  policy = create_llama3_1_5b().to(device(FLAGS.device))
+  policy = create_llama3_0_5b().to(device(FLAGS.device))
   optimizer = Adam(policy.parameters(), lr = FLAGS.lr)
   scheduler = CosineAnnealingWarmRestarts(optimizer, T_0 = 5, T_mult = 2)
   criterion = nn.MSELoss()
