@@ -34,10 +34,10 @@ def create_llama3_8b():
 class Gato(nn.Module):
   def __init__(self, patch_size = 32, llama_config = {
     "vocab_size": 20,
-    "hidden_size": 4096,
+    "hidden_size": 1024,
     "intermediate_size": 14336,
-    "num_hidden_layers": 24,
-    "num_attention_heads": 32,
+    "num_hidden_layers": 6,
+    "num_attention_heads": 8,
     "num_key_value_heads": 8,
     "hidden_act": "silu",
     "max_position_embeddings": 4096,
