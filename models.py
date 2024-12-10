@@ -32,7 +32,7 @@ def create_llama3_8b():
                        attention_bias = False,
                        attention_dropout = 0.,
                        mlp_bias = False)
-  return LlamaForCausalLM(config)
+  return Gato(config)
 
 def create_llama3_1_5b():
   config = LlamaConfig(vocab_size = 20,
@@ -56,10 +56,10 @@ def create_llama3_1_5b():
                        attention_bias = False,
                        attention_dropout = 0.,
                        mlp_bias = False)
-  return LlamaForCausalLM(config)
+  return Gato(config)
 
 class Gato(nn.Module):
-  def __init__(self, patch_size = 32, llama_config = {
+  def __init__(self, llama_config = {
     "vocab_size": 20,
     "hidden_size": 1024,
     "intermediate_size": 14336,
@@ -87,12 +87,11 @@ class Gato(nn.Module):
     self.encoder.fc = nn.Linear(512, self.llama3.config.hidden_size)
     self.pi = nn.Linear(self.llama3.config.hidden_size, 18)
     self.v_value = nn.Linear(self.llama3.config.hidden_size, 1)
-    self.patch_size = patch_size
   def forward(self, inputs, past_key_values = DynamicCache()):
     assert isinstance(past_key_values, Cache)
     # inputs.shape = (1, 3, 224, 224)
     # past_key_values.shape = (layer_num, 2, batch, head, seq_len, hidden / head)
-    results = (inputs - 128.) / 128. / np.sqrt(self.patch_size)
+    results = (inputs - 128.) / 128.
     results = self.encoder(results) # results.shape = (batch, hidden)
     results = torch.unsqueeze(results, dim = 1) # results.shape = (batch, 1, hidden)
     seq_length = past_key_values.get_seq_length()
