@@ -68,7 +68,7 @@ class Gato(nn.Module):
     results = self.conv2d(results) # results.shape = (batch, hidden, 7, 7)
     results = torch.flatten(results, start_dim = 2) # results.shape = (batch, hidden, 49)
     results = torch.permute(results, (0,2,1)) # results.shape = (batch, 49, hidden)
-    seq_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0
+    seq_length = past_key_values.get_seq_length() if past_key_values is not None else 0
     attention_mask = torch.ones((results.shape[0], seq_length + results.shape[1]), dtype = torch.int64).to(next(self.parameters()).device) # attention_mask.shape = (batch, 49)
     outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, past_key_values = past_key_values, use_cache = True)
     logits = outputs.last_hidden_state[:,-1,:] # logits.shape = (batch, hidden)
