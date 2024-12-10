@@ -16,7 +16,7 @@ from utils import preprocess, discount_cumsum, gae
 FLAGS = flags.FLAGS
 
 def add_options():
-  flags.DEFINE_integer('epoch', default = 500, help = 'epochs')
+  flags.DEFINE_integer('epochs', default = 500, help = 'epochs')
   flags.DEFINE_integer('seed', default = None, help = 'seed')
   flags.DEFINE_enum('device', default = 'cuda', enum_values = {'cpu', 'cuda'}, help = 'device to use')
   flags.DEFINE_float('lr', default = 1e-4, help = 'learning rate')
