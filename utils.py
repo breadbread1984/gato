@@ -20,12 +20,20 @@ def discount_cumsum(rewards, gamma = 1.):
     discount_cumsum[t] = rewards[t] + gamma * discount_cumsum[t + 1]
   return discount_cumsum
 
-def gae(diffs, lambda = 1.):
-  powers = torch.range(diffs.shape[0]).to(diffs.device)
-  weighted = torch.pow(diffs, powers)
-  gae = torch.sum(weighted)
-  return gae
+def gae(rewards, values, dones, gamma, lam):
+  T = len(rewards)
+  advantages = np.zeros(T)
+  gae_ = 0
+  for t in reversed(range(T)):
+    delta = rewards[t] + (gamma * values[t + 1] if not dones[t] else 0) - values[t]
+    advantages[t] = delta + (gamma * lam * advantages[t + 1] if not dones[t] else 0)
+  return advantages
 
 if __name__ == "__main__":
-  trajectories = generate_trajectories(1)
-  import pdb; pdb.set_trace()
+  rewards = np.random.normal(size = (10,))
+  values = np.random.normal(size = (10,))
+  dones = np.concatenate([np.zeros(9), np.ones(1)], axis = 0)
+  gamma = 0.95
+  lam = 0.95
+  g = gae(rewards, values, dones, gamma, lam)
+  print(g)
