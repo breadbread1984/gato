@@ -28,6 +28,7 @@ def main(unused_argv):
   policy = Gato().to(device(FLAGS.device))
   optimizer = Adam(policy.parameters(), lr = FLAGS.lr)
   scheduler = CosineAnnealingWarmRestarts(optimizer, T_0 = 5, T_mult = 2)
+  criterion = nn.MSELoss()
   tb_writer = SummaryWriter(log_dir = join(FLAGS.ckpt, 'summaries'))
   gym.register_envs(ale_py)
   env_ids = [env_id for env_id in gym.envs.registry.keys() if 'ALE/' in env_id and 'ram' not in env_id]
@@ -42,31 +43,33 @@ def main(unused_argv):
     for env_id in env_ids:
       optimizer.zero_grad()
       env = gym.make(env_id, render_mode = "rgb_array")
-      states, rewards, actions, v_preds = list(), list(), list(), list()
+      states, rewards, actions, v_preds, dones = list(), list(), list(), list(), list()
+      past_key_values = None
       obs, info = env.reset(seed = FLAGS.seed)
       states.append(preprocess(obs)) # s_t
       while True:
         inputs = torch.from_numpy(np.stack(states, axis = 0)).to(next(policy.parameters()).device) # inputs.shape = (len, 224, 224, 3)
-        action, v_pred = policy(inputs) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
+        action, v_pred, past_key_values = policy(inputs, past_key_values = past_key_values) # action.shape = (batch, 18), v_pred.shape = (batch, 1)
         # run in environment
-        act = np.argmax(action.detach().cpu().numpy()[0])
-        obs, reward, done, info = env.step(act)
-        rewards.append(reward) # r_t.shape = ()
+        act = torch.argmax(action[0], dim = 0) # act.shape = ()
+        obs, reward, done, info = env.step(act.detach().cpu().numpy())
+        rewards.append(torch.Tensor(reward)) # r_t.shape = ()
         actions.append(action[0]) # a_t.shape = (18,)
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
+        dones.append(done)
         if done:
           assert len(states) == len(actions) == len(rewards) == len(v_preds)
           observations = np.stack(states, axis = 0) # shape = (len, 3, 224, 224)
-          actions = np.stack(actions, axis = 0) # shape = (len)
-          rewards = np.stack(rewards, axis = 0) # shape = (len)
+          actions = torch.stack(actions, axis = 0) # shape = (len)
+          rewards = torch.stack(rewards, axis = 0) # shape = (len)
           v_trues = discount_cumsum(rewards, gamma = FLAGS.gamma) # V(s_t).shape = (len)
           v_preds = torch.cat(v_preds, dim = 0) # v_preds.shape = (len)
-          v_diff = v_preds - torch.from_numpy(v_trues).to(next(policy.parameters()).device) # v_diff.shape = (len)
-          advantages = gae(v_diff, FLAGS.lambda) # advantages.shape = (len)
+          advantages = gae(rewards, v_preds, dones, FLAGS.gamma, FLAGS.lambda)
+          break
         states.append(preprocess(obs)) # s_{t+1}
       probs = torch.stack(actions, dim = 0) # actions.shape = (len, 18)
       logprobs = torch.max(torch.log(probs), dim = -1) # log_prob.shape = (len)
-      loss = -torch.sum(logprobs * advantages)
+      loss = - torch.mean(logprobs * advantages) + 0.5 * criterion(v_preds, v_trues)
       loss.backward()
       optimizer.step()
       env.close()
