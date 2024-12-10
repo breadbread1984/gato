@@ -72,10 +72,9 @@ class Gato(nn.Module):
     attention_mask = torch.ones((results.shape[0], seq_length + results.shape[1]), dtype = torch.int64).to(next(self.parameters()).device) # attention_mask.shape = (batch, 49)
     outputs = self.llama3.forward(inputs_embeds = results, attention_mask = attention_mask, past_key_values = past_key_values, use_cache = True)
     logits = outputs.last_hidden_state[:,-1,:] # logits.shape = (batch, hidden)
-    past_key_values = outputs.past_key_values
     action = torch.softmax(self.pi(logits), dim = -1) # action.shape = (batch, 18)
     v_value = self.v_value(logits) # v.shape = (batch, 1)
-    return action, v_value, past_key_values
+    return action, v_value, outputs.past_key_values
 
 if __name__ == "__main__":
   gato = Gato().to('cuda')
