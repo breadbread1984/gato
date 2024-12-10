@@ -54,6 +54,7 @@ def main(unused_argv):
         # run in environment
         dist = torch.distributions.Categorical(probs[0])
         act = dist.sample() # act.shape = ()
+        print(past_key_values.get_seq_length(), act.detach().cpu().numpy())
         obs, reward, done, trunc, info = env.step(act.detach().cpu().numpy())
         rewards.append(torch.tensor(reward).to(next(policy.parameters()).device)) # r_t.shape = ()
         logprobs.append(torch.log(probs[0][act])) # logprob.shape = ()
