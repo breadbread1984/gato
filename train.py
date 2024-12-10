@@ -54,7 +54,7 @@ def main(unused_argv):
         # run in environment
         act = torch.argmax(action[0], dim = 0) # act.shape = ()
         obs, reward, done, trunc, info = env.step(act.detach().cpu().numpy())
-        rewards.append(torch.Tensor(reward).to(next(policy.parameters()).device)) # r_t.shape = ()
+        rewards.append(torch.tensor(reward).to(next(policy.parameters()).device)) # r_t.shape = ()
         actions.append(action[0]) # a_t.shape = (18,)
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
         dones.append(done)
