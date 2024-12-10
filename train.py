@@ -6,7 +6,7 @@ from absl import flags, app
 from os.path import join, exists
 from tqdm import tqdm
 import torch
-from torch import device
+from torch import nn, device
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.tensorboard import SummaryWriter
