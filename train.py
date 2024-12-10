@@ -60,7 +60,6 @@ def main(unused_argv):
         dones.append(done)
         if done:
           assert len(states) == len(actions) == len(rewards) == len(v_preds)
-          observations = np.stack(states, axis = 0) # shape = (len, 3, 224, 224)
           actions = torch.stack(actions, axis = 0) # shape = (len)
           rewards = torch.stack(rewards, axis = 0) # shape = (len)
           v_trues = discount_cumsum(rewards, gamma = FLAGS.gamma) # V(s_t).shape = (len)
