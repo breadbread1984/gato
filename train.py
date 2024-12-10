@@ -44,7 +44,7 @@ def main(unused_argv):
   for i in tqdm(range(FLAGS.epochs)):
     for env_id in env_ids:
       optimizer.zero_grad()
-      env = gym.make(env_id, render_mode = "rgb_array")
+      env = gym.make(env_id, render_mode = "rgb_array", max_episode_steps = 100)
       rewards, logprobs, v_preds, dones = list(), list(), list(), list()
       past_key_values = DynamicCache()
       obs, info = env.reset(seed = FLAGS.seed)
@@ -59,13 +59,6 @@ def main(unused_argv):
         logprobs.append(torch.log(probs[0][act])) # logprob.shape = ()
         v_preds.append(v_pred[0]) # hat{V}(s_t).shape = (1)
         dones.append(done)
-        if len(rewards) > 100:
-          del rewards[:-100]
-          del logprobs[:-100]
-          del v_preds[:-100]
-          del dones[:-100]
-          past_key_values.crop(100)
-          torch.cuda.empty_cache()
         if done:
           assert len(logprobs) == len(rewards) == len(v_preds)
           logprobs = torch.stack(logprobs, axis = 0) # shape = (len)
