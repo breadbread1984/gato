@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import gymasium as gym
+import gymnasium as gym
 import ale_py
 from absl import flags, app
 from os.path import join, exists
